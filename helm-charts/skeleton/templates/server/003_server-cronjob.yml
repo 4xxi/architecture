@@ -18,7 +18,7 @@ spec:
         spec:
           containers:
           - name: clear-message-history
-            image: "4xxi/skeleton-server:{{ .Values.server.branch }}"
+            image: "skeleton/skeleton-server:{{ .Values.server.branch }}"
             command: ["/usr/local/bin/php", "bin/console", "app:clear-message-history", "-e", "prod"]
             envFrom:
             - secretRef:
@@ -46,7 +46,7 @@ spec:
         spec:
           containers:
           - name: clear-message-history
-            image: "4xxi/skeleton-server:{{ .Values.server.branch }}"
+            image: "skeleton/skeleton-server:{{ .Values.server.branch }}"
             command: ["/usr/local/bin/php", "bin/console"]
             args: ["rabbitmq:consumer", "send_message", "-e", "prod", "-m", "$(RABBITMQ_MAX_COUNT)"]
             envFrom:

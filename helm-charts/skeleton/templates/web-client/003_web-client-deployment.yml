@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: skeleton-web-client
-        image: "4xxi/skeleton-web-client:{{ .Values.client.branch }}"
+        image: "skeleton/skeleton-web-client:{{ .Values.client.branch }}"
         imagePullPolicy: Always
         envFrom:
         - configMapRef:
