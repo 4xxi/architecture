@@ -1,0 +1,40 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: skeleton-web-client
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "skeleton.name" . }}
+    helm.sh/chart: {{ include "skeleton.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    keel.sh/policy: all
+spec:
+  selector:
+    matchLabels:
+      app: skeleton-web-client
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        keel.sh/policy: all
+        app: skeleton-web-client
+    spec:
+      containers:
+      - name: skeleton-web-client
+        image: "4xxi/skeleton-web-client:{{ .Values.client.branch }}"
+        imagePullPolicy: Always
+        envFrom:
+        - configMapRef:
+            name: skeleton-web-client-config
+        - configMapRef:
+            name: skeleton-server-config    
+        ports:
+          - containerPort: 3000
+            name: http
+            protocol: TCP           
+      imagePullSecrets:
+      - name: dockerhub
+      restartPolicy: Always

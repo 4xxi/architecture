@@ -1,0 +1,18 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name:  skeleton-web-client
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "skeleton.name" . }}
+    helm.sh/chart: {{ include "skeleton.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  selector:
+    app:  skeleton-web-client
+  type:  NodePort
+  ports:
+    - name:  http
+      port:  3000
+      targetPort:  3000

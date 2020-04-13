@@ -1,0 +1,54 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: skeleton-server
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "skeleton.name" . }}
+    helm.sh/chart: {{ include "skeleton.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app: skeleton-server
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 50m
+    nginx.org/client-max-body-size: 50m
+spec:
+  rules:
+  - host: {{ .Values.domain }}
+    http:
+      paths:
+      - path: /api
+        backend:
+          serviceName: skeleton-server
+          servicePort: 80
+      - path: /admin
+        backend:
+          serviceName: skeleton-server
+          servicePort: 80
+      - path: /bundles
+        backend:
+          serviceName: skeleton-server
+          servicePort: 80
+      - path: /connect
+        backend:
+          serviceName: skeleton-server
+          servicePort: 80
+      - path: /doc
+        backend:
+          serviceName: skeleton-server
+          servicePort: 80
+      - path: /login
+        backend:
+          serviceName: skeleton-server
+          servicePort: 80
+      - path: /login_check
+        backend:
+          serviceName: skeleton-server
+          servicePort: 80
+      - path: /static/images/user/
+        backend:
+          serviceName: skeleton-server
+          servicePort: 80
+  tls:
+  - hosts:
+    - {{ .Values.domain }}
