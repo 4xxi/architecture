@@ -56,7 +56,7 @@ spec:
             - secretRef:
                 name: aws-s3-secret
                 optional: false
-            image: "4xxi/aws-database-backup:{{ .Values.backuper.branch }}"
+            image: "skeleton/aws-database-backup:{{ .Values.backuper.branch }}"
             imagePullPolicy: Always
             name: backuper
             resources: {}

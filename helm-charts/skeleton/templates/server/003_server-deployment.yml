@@ -32,7 +32,7 @@ spec:
     spec:
       containers:
       - name: skeleton-server
-        image: "4xxi/skeleton-server:{{ .Values.server.branch }}"
+        image: "skeleton/skeleton-server:{{ .Values.server.branch }}"
         imagePullPolicy: Always
         envFrom:
         - configMapRef:
@@ -75,7 +75,7 @@ spec:
           name: skeleton-static-files
       initContainers:
       - name: copy-public
-        image: "4xxi/skeleton-server:{{ .Values.server.branch }}"
+        image: "skeleton/skeleton-server:{{ .Values.server.branch }}"
         imagePullPolicy: IfNotPresent
         command: [ "/bin/cp", "-r", "public/.", "public_site/" ]
         volumeMounts:

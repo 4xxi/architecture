@@ -34,7 +34,7 @@ server:
     allow_front_redirect_pattern: ""
     jwt_token_ttl: "86400"
     backup_code_hash_length: ""
-    oauth_allowed_domains: "*default_domain,4xxi.com"
+    oauth_allowed_domains: "*default_domain,skeleton.com"
   secret:
     app_secret: ""
     superadmin_pass: ""
