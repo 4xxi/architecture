@@ -31,7 +31,7 @@ mailer:
 
 server:
   branch: "develop"
-  jwt_enabled: false
+  jwt_enable: false
   config:
     allow_front_redirect_pattern: ""
     jwt_token_ttl: "86400"
