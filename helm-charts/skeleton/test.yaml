@@ -1,0 +1,671 @@
+---
+# Source: skeleton/templates/000_namespace.yml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: default-skeleton-team
+---
+# Source: skeleton/templates/001_aws-secret.yml
+apiVersion: v1
+data:
+  AWS_ACCESS_KEY_ID: ""
+  AWS_SECRET_ACCESS_KEY: ""
+  BUCKET_NAME: ""
+kind: Secret
+metadata:
+  name: aws-s3-secret
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+type: Opaque
+---
+# Source: skeleton/templates/backuper/000_backuper-secret.yml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backuper-secret
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+data:
+  AWS_SECRET_ACCESS_KEY: ""
+  ENCRYPT_PASS: ""
+type: Opaque
+---
+# Source: skeleton/templates/server/000_server-secret.yml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: skeleton-server-secret
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+data:
+  APP_SECRET: ""
+  SUPERADMIN_PASS: ""
+  BACKUP_CODE_SALT: ""
+  DATABASE_URL: ""
+  GOOGLE_ID: ""
+  GOOGLE_SECRET: ""
+  INVITATION_SALT: ""
+  MAILER_URL: "JSFzKDxuaWw+KTovLzpAOi8/dGltZW91dD02MCZlbmNyeXB0aW9uPXRscyZhdXRoX21vZGU9bG9naW4m"
+type: Opaque
+---
+# Source: skeleton/templates/backuper/000_backuper-config.yml
+﻿
+apiVersion: v1
+data:
+  AWS_BUCKET_BACKUP_PATH: ""
+  AWS_BUCKET_NAME: ""
+  AWS_DEFAULT_REGION: ""
+  DB_HOST: ""
+  DB_PORT: ""
+  ENCRYPT: "true"
+  SLACK_CHANNEL: "#backup"
+  SLACK_ENABLED: "false"
+  SLACK_WEBHOOK_URL: ""
+kind: ConfigMap
+metadata:
+  name: backuper-config
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: skeleton/templates/server/000_server-config.yml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: skeleton-server-config
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+    app: skeleton-server
+data:
+  API_URI: https://*default_domain
+  APP_URI: https://*default_domain
+  APP_NAME: Default skeleton Team
+  SENDER_ADDRESS: no-reply@*default_domain
+  OAUTH_ALLOWED_DOMAINS: "*default_domain,skeleton.com"
+  ALLOW_FRONT_REDIRECT_PATTERN: 
+  HTTP_X_FORWARDED_PROTO: https
+  HTTPS: "on"
+  RABBITMQ_IDLE_TIMEOUT: "30"
+  RABBITMQ_MAX_COUNT: "10"
+---
+# Source: skeleton/templates/server/000_server-config.yml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+    app: skeleton-server
+data:
+  nginx.conf: |
+    events {
+      worker_connections 2048;
+      multi_accept on;
+      use epoll;
+    }
+
+    http {
+      sendfile on;
+      tcp_nodelay on;
+      tcp_nopush on;
+      server_tokens off;
+      include /etc/nginx/mime.types;
+      default_type application/octet-stream;
+
+      keepalive_timeout 15;
+      types_hash_max_size 2048;
+      client_body_temp_path /tmp 1 2;
+      client_body_in_file_only off;
+      client_max_body_size 10M;
+
+      gzip on;
+      gzip_disable "msie6";
+      open_file_cache max=100;
+
+      log_format main '$remote_addr - $upstream_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+      access_log /var/log/nginx/access.log main;
+      error_log /var/log/nginx/error.log error;
+
+      upstream php_upstream {
+        server 127.0.0.1:9000;
+      }
+
+      server {
+        server_name _;
+        listen 80 default_server;
+        listen [::]:80 default_server;
+        root /var/www/html/public;
+
+        location / {
+          try_files $uri /index.php$is_args$args;
+        }
+
+        location /static/ {
+          alias /var/www/html/public/static/;
+          autoindex off;
+        }
+
+        location ~ ^/index\.php(/|$) {
+          fastcgi_pass php_upstream;
+          fastcgi_split_path_info ^(.+\.php)(/.*)$;
+          include fastcgi_params;
+          fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+          fastcgi_param DOCUMENT_ROOT $realpath_root;
+          internal;
+        }
+
+        location ~ \.php$ { return 404; }
+      }
+    }
+---
+# Source: skeleton/templates/web-client/000_web-client-config.yml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: skeleton-web-client-config
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+    app: skeleton-web-client
+data:
+  MAX_UPLOADING_FILE_SIZE: "10M"
+  TOTAL_MAX_UPLOADING_FILES_SIZES: "10M"
+---
+# Source: skeleton/templates/server/000_server-volume.yml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: skeleton-certificate
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: do-block-storage
+---
+# Source: skeleton/templates/server/000_server-volume.yml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: skeleton-static-files
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: do-block-storage
+---
+# Source: skeleton/templates/server/002_server-service.yml
+kind: Service
+apiVersion: v1
+metadata:
+  name:  skeleton-server
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    app:  skeleton-server
+  type:  NodePort
+  ports:
+    - name:  http
+      port:  80
+      targetPort:  80
+    - name:  php-fpm
+      port:  9000
+      targetPort:  9000
+---
+# Source: skeleton/templates/web-client/004_web-client-service.yml
+kind: Service
+apiVersion: v1
+metadata:
+  name:  skeleton-web-client
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    app:  skeleton-web-client
+  type:  NodePort
+  ports:
+    - name:  http
+      port:  3000
+      targetPort:  3000
+---
+# Source: skeleton/templates/server/003_server-deployment.yml
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: skeleton-server
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+    keel.sh/policy: all
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: skeleton-server
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 25%
+    type: RollingUpdate 
+  template:
+    metadata:
+      namespace: default-skeleton-team
+      labels:
+        app.kubernetes.io/name: skeleton
+        helm.sh/chart: skeleton-0.1.0
+        app.kubernetes.io/instance: RELEASE-NAME
+        app.kubernetes.io/managed-by: Helm
+        keel.sh/policy: all
+        app: skeleton-server
+    spec:
+      containers:
+      - name: skeleton-server
+        image: "skeleton/skeleton-server:develop"
+        imagePullPolicy: Always
+        envFrom:
+        - configMapRef:
+            name: skeleton-server-config
+        - secretRef:
+            name: skeleton-server-secret
+        - secretRef:
+            name: postgres-secret
+        - secretRef:
+            name: rabbitmq-secret 
+        - configMapRef:
+            name: rabbitmq-config
+        - configMapRef:
+            name: redis-config
+        - secretRef:
+            name: mailer-secret
+        - configMapRef:
+            name: mailer-config        
+        ports:
+        - name: php-fpm
+          containerPort: 9000 
+        volumeMounts:
+        - mountPath: /var/www/html/public
+          name: skeleton-static-files
+      - name: nginx
+        image: "nginx:alpine"
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 0 
+        ports:
+        - name: http
+          containerPort: 80
+        volumeMounts:
+        - mountPath: /etc/nginx/nginx.conf
+          name: nginx-config-volume
+          subPath: nginx.conf
+        - mountPath: /var/www/html/public
+          name: skeleton-static-files
+      initContainers:
+      - name: copy-public
+        image: "skeleton/skeleton-server:develop"
+        imagePullPolicy: IfNotPresent
+        command: [ "/bin/cp", "-r", "public/.", "public_site/" ]
+        volumeMounts:
+        - mountPath: /var/www/html/public_site
+          name: skeleton-static-files
+      securityContext:
+        runAsUser: 82
+        runAsGroup: 82
+        fsGroup: 82
+      volumes:
+      - name: skeleton-certificate
+        persistentVolumeClaim:
+          claimName: skeleton-certificate
+      - name: skeleton-static-files
+        persistentVolumeClaim:
+          claimName: skeleton-static-files
+      - configMap:
+          defaultMode: 256
+          name: nginx-config
+          optional: false
+        name: nginx-config-volume
+---
+# Source: skeleton/templates/web-client/003_web-client-deployment.yml
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: skeleton-web-client
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+    keel.sh/policy: all
+spec:
+  selector:
+    matchLabels:
+      app: skeleton-web-client
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        keel.sh/policy: all
+        app: skeleton-web-client
+    spec:
+      containers:
+      - name: skeleton-web-client
+        image: "skeleton/skeleton-web-client:master"
+        imagePullPolicy: Always
+        envFrom:
+        - configMapRef:
+            name: skeleton-web-client-config
+        - configMapRef:
+            name: skeleton-server-config    
+        ports:
+          - containerPort: 3000
+            name: http
+            protocol: TCP           
+      imagePullSecrets:
+      - name: dockerhub
+      restartPolicy: Always
+---
+# Source: skeleton/templates/backuper/001_backuper-cronjob.yml
+﻿
+apiVersion: v1
+kind: CronJob
+metadata:
+  name: backuper
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+    keel.sh/policy: all
+spec:
+  failedJobsHistoryLimit: 10
+  jobTemplate:
+    metadata:
+      creationTimestamp: null
+    spec:
+      activeDeadlineSeconds: 600
+      backoffLimit: 3
+      completions: 1
+      parallelism: 1
+      template:
+        spec:
+          containers:
+          - args:
+            - /pgsql-backup.sh
+            command:
+            - /bin/sh
+            env:
+            - name: TARGET_DATABASE_NAMES
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_DB
+                  name: postgres-secret
+                  optional: false
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_PASSWORD
+                  name: postgres-secret
+                  optional: false
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_USER
+                  name: postgres-secret
+                  optional: false
+            envFrom:
+            - secretRef:
+                name: backuper-secret
+                optional: false
+            - configMapRef:
+                name: backuper-config
+                optional: false
+            - secretRef:
+                name: aws-s3-secret
+                optional: false
+            image: "skeleton/aws-database-backup:latest"
+            imagePullPolicy: Always
+            name: backuper
+            resources: {}
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+          dnsPolicy: ClusterFirst
+          restartPolicy: Never
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+  schedule: 0 01 * * *
+  successfulJobsHistoryLimit: 10
+  suspend: false
+---
+# Source: skeleton/templates/server/003_server-cronjob.yml
+apiVersion: v1
+kind: CronJob
+metadata:
+  name: cron-clear-message-history
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+    keel.sh/policy: all
+spec:
+  schedule: "0 12 * * *"
+  concurrencyPolicy: Replace
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: clear-message-history
+            image: "skeleton/skeleton-server:develop"
+            command: ["/usr/local/bin/php", "bin/console", "app:clear-message-history", "-e", "prod"]
+            envFrom:
+            - secretRef:
+                name: skeleton-server-secret
+          restartPolicy: OnFailure
+---
+# Source: skeleton/templates/server/003_server-cronjob.yml
+apiVersion: v1
+kind: CronJob
+metadata:
+  name: send-message-consumer
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+    keel.sh/policy: all
+spec:
+  schedule: "*/1 * * * *"
+  concurrencyPolicy: Replace
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: clear-message-history
+            image: "skeleton/skeleton-server:develop"
+            command: ["/usr/local/bin/php", "bin/console"]
+            args: ["rabbitmq:consumer", "send_message", "-e", "prod", "-m", "$(RABBITMQ_MAX_COUNT)"]
+            envFrom:
+            - configMapRef:
+                name: skeleton-server-config
+            - secretRef:
+                name: skeleton-server-secret
+            - configMapRef:
+                name: rabbitmq-config
+            - secretRef:
+                name: rabbitmq-secret
+            - secretRef:
+                name: mailer-secret
+            - configMapRef:
+                name: mailer-config      
+          restartPolicy: OnFailure
+          terminationGracePeriodSeconds: 30
+---
+# Source: skeleton/templates/server/004_server-ingress.yml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: skeleton-server
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+    app: skeleton-server
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 50m
+    nginx.org/client-max-body-size: 50m
+spec:
+  rules:
+  - host: default.skeleton.team
+    http:
+      paths:
+      - path: /api
+        backend:
+          serviceName: skeleton-server
+          servicePort: 80
+      - path: /admin
+        backend:
+          serviceName: skeleton-server
+          servicePort: 80
+      - path: /bundles
+        backend:
+          serviceName: skeleton-server
+          servicePort: 80
+      - path: /connect
+        backend:
+          serviceName: skeleton-server
+          servicePort: 80
+      - path: /doc
+        backend:
+          serviceName: skeleton-server
+          servicePort: 80
+      - path: /login
+        backend:
+          serviceName: skeleton-server
+          servicePort: 80
+      - path: /login_check
+        backend:
+          serviceName: skeleton-server
+          servicePort: 80
+      - path: /static/images/user/
+        backend:
+          serviceName: skeleton-server
+          servicePort: 80
+  tls:
+  - hosts:
+    - default.skeleton.team
+---
+# Source: skeleton/templates/web-client/005_web-client-ingress.yml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: skeleton-web-client
+  namespace: default-skeleton-team
+  labels:
+    app.kubernetes.io/name: skeleton
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+    app: skeleton-web-client
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 50m
+    nginx.org/client-max-body-size: 50m
+spec:
+  rules:
+  - host: default.skeleton.team
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: skeleton-web-client
+          servicePort: 3000
+  tls:
+  - hosts:
+    - default.skeleton.team
+---
+# Source: skeleton/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "RELEASE-NAME-skeleton-test-connection"
+  labels:
+
+    helm.sh/chart: skeleton-0.1.0
+    app.kubernetes.io/name: skeleton
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args:  ['RELEASE-NAME-skeleton:']
+  restartPolicy: Never
