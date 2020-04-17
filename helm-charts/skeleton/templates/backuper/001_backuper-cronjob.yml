@@ -1,4 +1,4 @@
-﻿{{ if .Values.backuper.enable }}
+﻿{{- if .Values.backuper.enable -}}
 apiVersion: v1
 kind: CronJob
 metadata:
@@ -70,4 +70,4 @@ spec:
   schedule: 0 01 * * *
   successfulJobsHistoryLimit: 10
   suspend: false
-{{ end }}
+{{- end -}}
