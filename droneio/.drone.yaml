@@ -95,6 +95,7 @@ globals:
   repo:
     from_secret: repo
   tag: ${DRONE_BRANCH}
+  auto_tag: true
   username:
     from_secret: username
   password:
@@ -178,29 +179,29 @@ globals:
 steps:
 - <<: *stepCheckBuild
   when:
-    branch: [ feature/* ]
+    ref: [ refs/heads/feature/*, refs/heads/hotfix/*]
 
 - <<: *stepMainBuild
   when:
-    branch: [ develop, staging, master ]
+    ref: [ refs/heads/develop, refs/heads/staging, refs/heads/master, refs/tags/* ]
 
 - <<: *stepDevelopDeploy
   when:
-    branch: [ develop ]
+    ref: [ refs/heads/develop ]
 
 - <<: *stepStagingDeploy
   when:
-    branch: [ staging ]
+    ref: [ refs/heads/staging ]
 
 - <<: *stepNotifyToSlack
   when:
     status: [ success, failure ]
-    branch: [ feature/*, staging, develop, master ]
+    ref: [ refs/heads/develop, refs/heads/staging, refs/heads/master, refs/tags/* ]
 
 trigger:
-  branch:
-  - master
-  - staging
-  - develop
-  - feature/*
-  - hotfix/*
+  ref:
+    - refs/heads/feature/*
+    - refs/heads/hotfix/*
+    - refs/heads/develop
+    - refs/heads/staging
+    - refs/tags/*
