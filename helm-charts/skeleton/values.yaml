@@ -47,6 +47,7 @@ server:
     invitation_salt: ""
     jwt_passphrase: ""
     mailer_url: ""
+    postgres_secret_name: "postgres-secret"
 
 backuper:
   enable: true

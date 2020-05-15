@@ -40,7 +40,7 @@ spec:
         - secretRef:
             name: skeleton-server-secret
         - secretRef:
-            name: postgres-secret
+            name: {{ .Values.server.secret.postgres_secret_name }}
         - secretRef:
             name: rabbitmq-secret 
         - configMapRef:
