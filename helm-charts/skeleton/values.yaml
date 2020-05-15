@@ -11,6 +11,7 @@ common:
   config:
     api_uri: "https://*default_domain"
     app_uri: "https://*default_domain"
+    test_port: 8080
 
 aws:
   secret:
@@ -30,6 +31,7 @@ mailer:
 
 server:
   branch: "develop"
+  jwt_enable: false
   config:
     allow_front_redirect_pattern: ""
     jwt_token_ttl: "86400"
@@ -45,6 +47,7 @@ server:
     invitation_salt: ""
     jwt_passphrase: ""
     mailer_url: ""
+    postgres_secret_name: "postgres-secret"
 
 backuper:
   enable: true

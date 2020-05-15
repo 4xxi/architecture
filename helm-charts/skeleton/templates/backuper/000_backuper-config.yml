@@ -1,4 +1,4 @@
-﻿{{ if .Values.backuper.enable }}
+﻿{{- if .Values.backuper.enable -}}
 apiVersion: v1
 data:
   AWS_BUCKET_BACKUP_PATH: {{ .Values.backuper.config.aws_bucket_backup_path | quote }}
@@ -19,4 +19,4 @@ metadata:
     helm.sh/chart: {{ include "skeleton.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{ end }}
+{{- end -}}
