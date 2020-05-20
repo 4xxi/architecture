@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-service
+spec:
+  ports:
+    {{- if .Values.syslog.enableUDP }}
+    - port: 5140
+      protocol: UDP
+      targetPort: 5140
+      name: udp
+    {{- end }}
+    {{- if .Values.syslog.enableTCP }}
+    - port: 5140
+      protocol: TCP
+      targetPort: 5140
+      name: tcp
+    {{- end }}
+  selector:
+    app: {{ .Chart.Name }}
+  sessionAffinity: None
+  type: NodePort

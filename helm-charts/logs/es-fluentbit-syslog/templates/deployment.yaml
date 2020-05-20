@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      name: {{ .Chart.Name }}
+      labels:
+        app: {{ .Chart.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: fluent/fluent-bit:{{ .Values.fluent_bit.version }}
+          imagePullPolicy: Always
+          ports:
+            {{- if .Values.syslog.enableUDP }}
+            - containerPort: 5140
+              name: udp
+              protocol: UDP
+            {{- end }}
+            {{- if .Values.syslog.enableTCP }}
+            - containerPort: 5140
+              name: tcp
+              protocol: TCP
+            {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /fluent-bit/etc/fluent-bit.conf
+              subPath: fluent-bit.conf
+            - name: config
+              mountPath: /fluent-bit/etc/parsers.conf
+              subPath: parsers.conf
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Chart.Name }}-config
+

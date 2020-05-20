@@ -1,0 +1,13 @@
+replicaCount: 1
+
+fluent_bit:
+  version: "1.4"
+
+elasticSearch:
+  host: elasticsearch-master
+  port: 9200
+  logIndexPrefix: kubernetes_cluster
+
+syslog:
+  enableTCP: true
+  enableUDP: true
