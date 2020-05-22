@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Chart.Name }}-service
+  name: {{ include "fluentbit.fullname" . }}-service
 spec:
   ports:
     {{- if .Values.syslog.enableUDP }}
@@ -17,6 +17,6 @@ spec:
       name: tcp
     {{- end }}
   selector:
-    app: {{ .Chart.Name }}
+    app: {{ include "fluentbit.fullname" . }}
   sessionAffinity: None
   type: NodePort

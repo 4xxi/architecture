@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Chart.Name }}
+  name: {{ include "fluentbit.fullname" . }}
 spec:
   selector:
     matchLabels:
-      app: {{ .Chart.Name }}
+      app: {{ include "fluentbit.fullname" . }}
   replicas: {{ .Values.replicaCount }}
   template:
     metadata:
-      name: {{ .Chart.Name }}
+      name: {{ include "fluentbit.fullname" . }}
       labels:
-        app: {{ .Chart.Name }}
+        app: {{ include "fluentbit.fullname" . }}
     spec:
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{ include "fluentbit.fullname" . }}
           image: fluent/fluent-bit:{{ .Values.fluent_bit.version }}
           imagePullPolicy: Always
           ports:
@@ -38,5 +38,5 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: {{ .Chart.Name }}-config
+            name: {{ include "fluentbit.fullname" . }}-config
 

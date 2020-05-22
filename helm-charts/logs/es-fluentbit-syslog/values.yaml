@@ -6,8 +6,8 @@ fluent_bit:
 elasticSearch:
   host: elasticsearch-master
   port: 9200
-  logIndexPrefix: kubernetes_cluster
+  logIndexPrefix: erp-logs
 
 syslog:
-  enableTCP: true
+  enableTCP: false
   enableUDP: true
