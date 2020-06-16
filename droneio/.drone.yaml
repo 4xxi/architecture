@@ -246,7 +246,7 @@ globals:
   - name: dockersock
     path: /var/run/docker.sock
   commands:
-  - trivy client --remote $URL_TRIVY --ignore-unfixed --severity HIGH,CRITICAL  $REPOSITORY:latest
+  - trivy client --remote $URL_TRIVY --ignore-unfixed --severity HIGH,CRITICAL $REPOSITORY:latest
 
 - &stepSecurityNmap
   image: securecodebox/nmap 
@@ -258,20 +258,20 @@ globals:
   image: owasp/zap2docker-stable
   pull: if-not-exists
   commands:
-  - cd ~ && sleep 30 && zap-baseline.py -I -t http://skeleton_target -m 2
+  - cd ~ && sleep 30 && zap-full-scan.py -t http://skeleton_target
   
 steps:
-- name: Security trivy
+- name: Security vulnerability scan
   <<: *stepSecurityTrivy
   when:
     branch: [ staging, develop, master ]
     
-- name: Security nmap
+- name: Security listening ports
   <<: *stepSecurityNmap
   when:
     branch: [ staging, develop, master ]
 
-- name: Securuty zaproxy
+- name: Security zaproxy full scan
   <<: *stepSecurityZaproxy
   when:
     branch: [ staging, develop, master ]
