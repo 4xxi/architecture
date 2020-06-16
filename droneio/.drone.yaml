@@ -1,27 +1,27 @@
 kind: secret
 name: registry
 get:
-  path: secret/data/registry
+  path: secret/data/skeleton-registry
   name: registry
 ---
 kind: secret
 name: username
 get:
-  path: secret/data/registry
+  path: secret/data/skeleton-registry
   name: username
 
 ---
 kind: secret
 name: password
 get:
-  path: secret/data/registry
+  path: secret/data/skeleton-registry
   name: password
 ---
 kind: secret
-name: repo
+name: repoitory
 get:
-  path: secret/data/standartization-repository
-  name: repo
+  path: secret/data/skeleton-repository
+  name: repository
 ---
 kind: secret
 name: develop_url
@@ -77,9 +77,21 @@ get:
   path: secret/data/notifications-skeleton
   name: icon_url
 ---
-kind: pipeline
+kind: secret
+name: secure_trivy
+get:
+  path: secret/data/skeleton-security
+  name: secure_trivy_url
+---
+name: 4xxi build skeleton
 type: docker
-name: skeleton
+kind: pipeline
+
+volumes:
+- name: dockersock
+  host: 
+    path: /var/run/docker.sock
+
 globals:
 - &confNoSaveBuild
   dockerfile: Dockerfile
@@ -99,21 +111,21 @@ globals:
     from_secret: username
   password:
     from_secret: password
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
 
 - &stepCheckBuild
-  name: build test
   image: plugins/docker
   settings:
     <<: *confNoSaveBuild
 
 - &stepMainBuild
-  name: build
   image: plugins/docker
   settings:
     <<: *confSaveBuild
 
 - &stepDevelopDeploy
-  name: deploy develop
   image: sinlead/drone-kubectl
   settings:
     kubernetes_server:
@@ -131,7 +143,6 @@ globals:
   - kubectl apply -f deploy/ -n skeleton-project
 
 - &stepStagingDeploy
-  name: deploy staging
   image: sinlead/drone-kubectl
   settings:
     kubernetes_server:
@@ -149,7 +160,6 @@ globals:
   - kubectl apply -f deploy/ -n staging-skeleton-project
 
 - &stepNotifyToSlack
-  name: notify-to-slack
   image: plugins/slack
   pull: always
   settings:
@@ -176,29 +186,95 @@ globals:
       {{/success}}
 
 steps:
-- <<: *stepCheckBuild
+- name: build (no save)
+  <<: *stepCheckBuild
   when:
     branch: [ feature/* ]
 
-- <<: *stepMainBuild
+- name: build
+  <<: *stepMainBuild
   when:
     branch: [ develop, staging, master ]
 
-- <<: *stepDevelopDeploy
+- name: deploy develop
+  <<: *stepDevelopDeploy
   when:
     branch: [ develop ]
 
-- <<: *stepStagingDeploy
+- name: deploy staging
+  <<: *stepStagingDeploy
   when:
     branch: [ staging ]
 
-- <<: *stepNotifyToSlack
+- name: notify-to-slack
+  <<: *stepNotifyToSlack
   when:
     status: [ success, failure ]
     branch: [ feature/*, staging, develop, master ]
 
 trigger:
-  branch:
-  - staging
-  - develop
-  - feature/*
+  branch: [ feature/*, staging, develop, master  ]
+---
+name: 4xxi secure skeleton
+type: docker
+kind: pipeline
+depends_on: [ "4xxi build skeleton" ]
+
+clone:
+  disable: true
+  
+volumes:
+- name: dockersock
+  host: 
+    path: /var/run/docker.sock
+    
+services:
+- name: skeleton_target
+  image: 
+    from_secret: repository
+
+globals:
+- &stepSecurityTrivy
+  image: aquasec/trivy
+  pull: if-not-exists
+  environment:
+    URL_TRIVY:
+      from_secret: secure_trivy
+    REPOSITORY:
+      from_secret: repository
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  commands:
+  - trivy client --remote $URL_TRIVY --ignore-unfixed --severity HIGH,CRITICAL  $REPOSITORY:latest
+
+- &stepSecurityNmap
+  image: securecodebox/nmap 
+  pull: if-not-exists
+  commands: 
+  - sleep 30 && nmap skeleton_target
+  
+- &stepSecurityZaproxy
+  image: owasp/zap2docker-stable
+  pull: if-not-exists
+  commands:
+  - cd ~ && sleep 30 && zap-baseline.py -I -t http://skeleton_target -m 2
+  
+steps:
+- name: Security trivy
+  <<: *stepSecurityTrivy
+  when:
+    branch: [ staging, develop, master ]
+    
+- name: Security nmap
+  <<: *stepSecurityNmap
+  when:
+    branch: [ staging, develop, master ]
+
+- name: Securuty zaproxy
+  <<: *stepSecurityZaproxy
+  when:
+    branch: [ staging, develop, master ]
+  
+trigger:
+  branch: [ staging, develop, master ]
