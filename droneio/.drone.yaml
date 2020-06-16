@@ -258,7 +258,7 @@ globals:
   image: owasp/zap2docker-stable
   pull: if-not-exists
   commands:
-  - cd ~ && sleep 30 && zap-full-scan.py -t http://skeleton_target
+  - cd ~ && sleep 30 && zap-baseline.py -I -t http://skeleton_target -m 2
   
 steps:
 - name: Security vulnerability scan
@@ -271,7 +271,7 @@ steps:
   when:
     branch: [ staging, develop, master ]
 
-- name: Security zaproxy full scan
+- name: Securuty zaproxy scan
   <<: *stepSecurityZaproxy
   when:
     branch: [ staging, develop, master ]
